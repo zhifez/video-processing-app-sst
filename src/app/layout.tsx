@@ -5,8 +5,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Video Compression App",
-  description: "Compress your videos with ease",
+  title: "Video Processing App",
+  description: "Process your videos with ease",
 };
 
 export default function RootLayout({

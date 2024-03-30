@@ -3,7 +3,7 @@
 export default $config({
   app(input) {
     return {
-      name: "video-compression-app",
+      name: "video-processing-app",
       removal: input?.stage === "production" ? "retain" : "remove",
       home: "aws",
     };

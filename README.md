@@ -1,4 +1,14 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Video Processing App
+
+An event-driven app that utilises FFMPEG to compress video.
+
+## Architecture
+
+- NextJS App - For user to upload videos
+- S3 (UserVideoBucket) - Where the videos will be stored
+- Lambda (VideoProcessingService) - Compresses video using FFMPEG on video item created in S3
+- DynamoDB (VideoProcessingRequest) - Store request records
+- Incognito - User auth and accounts
 
 ## Getting Started
 
