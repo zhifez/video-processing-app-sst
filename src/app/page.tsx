@@ -9,7 +9,7 @@ export default async function Home() {
     Bucket: Resource.UserVideoBucket.name,
   });
   const url = await getSignedUrl(new S3Client({
-    region: 'us-east-1',
+    region: 'ap-southeast-1',
   }), command);
 
   return (
