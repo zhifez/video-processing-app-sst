@@ -1,7 +1,14 @@
-"use client";
+'use client';
+import { getFileExtension } from '@/utils/utils';
 import { FormEvent, useState } from 'react';
 
-export default function Form({ url }: { url: string; }) {
+export default function Form({
+  videoFileUrl,
+  videoConfigUrl,
+}: {
+  videoFileUrl: string;
+  videoConfigUrl: string;
+}) {
   const [uploaded, setUploaded] = useState(false);
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -9,13 +16,28 @@ export default function Form({ url }: { url: string; }) {
     setUploaded(false);
 
     try {
-      const file = (e.target as HTMLFormElement).file.files?.[0]!;
-      await fetch(url, {
-        body: file,
-        method: "PUT",
+      const videoFile: File = (e.target as HTMLFormElement).file.files?.[0]!;
+      await fetch(videoFileUrl, {
+        body: videoFile,
+        method: 'PUT',
         headers: {
-          "Content-Type": file.type,
-          "Content-Disposition": `attachment; filename="${file.name}"`,
+          'Content-Type': videoFile.type,
+          'Content-Disposition': `attachment; filename="${videoFile.name}"`,
+        },
+      });
+
+      const config = {
+        fileExt: getFileExtension(videoFile.name),
+        // TODO: Include rest of the video editing configs
+      };
+      const configFile = new Blob([JSON.stringify(config)], {
+        type: 'application/json',
+      });
+      await fetch(videoConfigUrl, {
+        body: configFile,
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
         },
       });
 
