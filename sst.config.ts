@@ -54,7 +54,7 @@ export default $config({
       ],
       permissions: [
         {
-          actions: ['dynamodb:*'],
+          actions: ['dynamodb:PutItem'],
           resources: [`arn:aws:dynamodb:::${dynamoVideoRequestTable.name}/*`],
         },
       ],

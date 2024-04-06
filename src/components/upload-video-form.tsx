@@ -8,17 +8,18 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Card, CardContent, CardHeader } from './ui/card';
+import { redirect, useRouter } from 'next/navigation';
 
 const INPUT_ACCEPTED_FORMATS = 'video/*';
 const INPUT_MAX_FILE_SIZE = 1024 * 1024 * 5; // 5MB
 const DEFAULT_FILE_EXTENSION = '.mp4';
 
 export default function UploadVideoForm() {
+  const router = useRouter();
   const [loading, setLoading] = useState<boolean>(false);
   const [file, setFile] = useState<File | undefined>();
   const [outputType, setOutputType] = useState<VideoFileType>(VideoFileType.MP4);
   const [error, setError] = useState<string | undefined>();
-  const [success, setSuccess] = useState<boolean>(false);
 
   const onSelectFile = (e: ChangeEvent<HTMLInputElement>) => {
     const videoFile: File = (e.target as HTMLInputElement).files?.[0]!;
@@ -35,7 +36,6 @@ export default function UploadVideoForm() {
     e.preventDefault();
     setLoading(true);
     setError(undefined);
-    setSuccess(false);
 
     try {
       const videoFile: File = (e.target as HTMLFormElement).file.files?.[0]!;
@@ -47,8 +47,8 @@ export default function UploadVideoForm() {
         configUploadUrl,
       } =
         GetVideosUploadResponseSchema.parse(
-          (await axios.get<GetVideosUploadResponseType>(
-            '/api/videos/upload',
+          (await axios.get(
+            '/api/video/upload',
             {
               params: {
                 ext: fileExt,
@@ -86,7 +86,7 @@ export default function UploadVideoForm() {
         },
       );
 
-      setSuccess(true);
+      router.push(`/request/${requestId}`);
     } catch (error: any) {
       setError(error.message);
     }
@@ -99,7 +99,7 @@ export default function UploadVideoForm() {
   );
 
   return (
-    <Card>
+    <Card className="w-1/2">
       <CardHeader>
         <p className="text-xl font-semibold">Video Processing App</p>
         <ul className="text-sm list-disc list-inside">
@@ -131,7 +131,6 @@ export default function UploadVideoForm() {
             Convert
           </Button>
           {error && <p className="text-sm font-semibold text-center text-red-500">{error}</p>}
-          {success && <p className="text-sm font-semibold text-center">File Uploaded Successfully.</p>}
         </form>
       </CardContent>
     </Card>
