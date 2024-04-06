@@ -15,8 +15,11 @@ export async function GET(request: NextRequest) {
 
     const queryVideoRequestCommand = new QueryCommand({
       TableName: Resource.VideoRequestTable.name,
-      KeyConditionExpression: 'requestId = :requestId',
+      KeyConditionExpression: 'userId = :userId AND requestId = :requestId',
       ExpressionAttributeValues: {
+        ':userId': {
+          S: 'NO_USER',
+        },
         ':requestId': {
           S: requestId,
         },

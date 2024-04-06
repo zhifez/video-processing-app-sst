@@ -14,6 +14,7 @@ export default $config({
     };
   },
   async run() {
+    // S3: Store video and json files
     const bucketUserVideo = new sst.aws.Bucket('UserVideoBucket', {
       public: true,
       cors: {
@@ -24,6 +25,7 @@ export default $config({
       },
     });
 
+    // DynamoDB: Store video processing requests
     const dynamoVideoRequestTable = new sst.aws.Dynamo('VideoRequestTable', {
       fields: {
         userId: 'string',
@@ -52,6 +54,7 @@ export default $config({
       },
     });
 
+    // NextJS: Upload video, download processed output when completed
     new sst.aws.Nextjs('MainSite', {
       link: [
         bucketUserVideo,
@@ -70,7 +73,7 @@ export default $config({
       ],
     });
 
-    // Trigger Lambda every time something is uploaded
+    // Lambda: Trigger every time something is uploaded to S3
     bucketUserVideo.subscribe({
       handler: 'src/lambdas/video-processing.handler',
       link: [bucketUserVideo],

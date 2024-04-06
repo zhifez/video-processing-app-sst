@@ -7,6 +7,7 @@ import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { NextRequest, NextResponse } from 'next/server';
 import { Resource } from 'sst';
+import { addDays } from 'date-fns';
 
 export async function GET(request: NextRequest) {
   try {
@@ -26,20 +27,20 @@ export async function GET(request: NextRequest) {
     const createVideoRequestCommand = new PutItemCommand({
       TableName: Resource.VideoRequestTable.name,
       Item: {
-        'requestId': {
-          S: requestId,
-        },
         'userId': {
           S: 'NO_USER',
+        },
+        'requestId': {
+          S: requestId,
         },
         'status': {
           S: StatusType.INACTIVE,
         },
         'updatedAt': {
-          S: toEpochTime(new Date()).toString(),
+          N: toEpochTime(new Date()).toString(),
         },
         'ttl': {
-          N: toEpochTime(new Date()).toString(),
+          N: toEpochTime(addDays(new Date(), 1)).toString(),
         },
       },
     });
