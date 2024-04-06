@@ -30,11 +30,13 @@ export default $config({
       ],
     });
 
+    // Trigger Lambda every time something is uploaded
     bucketUserVideo.subscribe({
       handler: 'src/lambdas/video-processing.handler',
       link: [bucketUserVideo],
     }, {
-      events: ['s3:ObjectCreated:*']
+      filterSuffix: '.json',
+      events: ['s3:ObjectCreated:*'],
     });
   },
 });
