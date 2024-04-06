@@ -26,22 +26,27 @@ export default $config({
 
     const dynamoVideoRequestTable = new sst.aws.Dynamo('VideoRequestTable', {
       fields: {
+        userId: 'string',
         requestId: 'string',
         status: 'string',
-        updatedAt: 'string',
+        updatedAt: 'number',
         ttl: 'number',
       },
       primaryIndex: {
-        hashKey: 'requestId',
-        rangeKey: 'status',
+        hashKey: 'userId',
+        rangeKey: 'requestId',
       },
       globalIndexes: {
+        StatusIndex: {
+          hashKey: 'userId',
+          rangeKey: 'status',
+        },
         UpdatedAtIndex: {
-          hashKey: 'requestId',
+          hashKey: 'userId',
           rangeKey: 'updatedAt',
         },
-        ttlIndexes: {
-          hashKey: 'requestId',
+        TtlIndex: {
+          hashKey: 'userId',
           rangeKey: 'ttl',
         },
       },
@@ -54,8 +59,13 @@ export default $config({
       ],
       permissions: [
         {
-          actions: ['dynamodb:PutItem'],
-          resources: [`arn:aws:dynamodb:::${dynamoVideoRequestTable.name}/*`],
+          actions: [
+            'dynamodb:PutItem',
+            'dynamodb:Query',
+          ],
+          resources: [
+            `arn:aws:dynamodb:::${dynamoVideoRequestTable.name}/*`,
+          ],
         },
       ],
     });

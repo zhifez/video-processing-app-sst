@@ -36,7 +36,6 @@ const VideoByIdPage = ({
           },
         )).data
       );
-      console.log({ response });
       setVideoRequest(response);
     } catch (error) {
       console.error('Error fetching video request:', error);

@@ -29,11 +29,14 @@ export async function GET(request: NextRequest) {
         'requestId': {
           S: requestId,
         },
+        'userId': {
+          S: 'NO_USER',
+        },
         'status': {
           S: StatusType.INACTIVE,
         },
         'updatedAt': {
-          S: new Date().toISOString(),
+          S: toEpochTime(new Date()).toString(),
         },
         'ttl': {
           N: toEpochTime(new Date()).toString(),
