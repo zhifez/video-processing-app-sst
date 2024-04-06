@@ -9,6 +9,9 @@ export const getFileExtension = (fileName: string) => {
   }
 };
 
+export const toEpochTime = (date: Date) =>
+  Math.floor(date.getTime() / 1000);
+
 export enum VideoFileType {
   MP4 = 'video/mp4',          // MP4
   WEBM = 'video/webm',        // WebM

@@ -42,20 +42,19 @@ export default function UploadVideoForm() {
       const fileExt = getFileExtension(videoFile.name) ?? DEFAULT_FILE_EXTENSION;
 
       const {
-        data: {
-          videoUploadUrl,
-          configUploadUrl,
-        },
+        requestId,
+        videoUploadUrl,
+        configUploadUrl,
       } =
         GetVideosUploadResponseSchema.parse(
-          await axios.get<GetVideosUploadResponseType>(
+          (await axios.get<GetVideosUploadResponseType>(
             '/api/videos/upload',
             {
               params: {
                 ext: fileExt,
               },
             }
-          )
+          )).data
         );
 
       // Upload video

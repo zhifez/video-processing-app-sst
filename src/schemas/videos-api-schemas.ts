@@ -1,10 +1,9 @@
 import * as z from 'zod';
 
 export const GetVideosUploadResponseSchema = z.object({
-  data: z.object({
-    videoUploadUrl: z.string(),
-    configUploadUrl: z.string(),
-  }),
+  requestId: z.string(),
+  videoUploadUrl: z.string(),
+  configUploadUrl: z.string(),
 });
 
 export type GetVideosUploadResponseType = z.infer<typeof GetVideosUploadResponseSchema>;
