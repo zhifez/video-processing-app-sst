@@ -1,29 +1,9 @@
-import { Resource } from "sst";
-import Form from "@/components/form";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { PutObjectCommand } from "@aws-sdk/client-s3";
-import { s3 } from '@/utils/s3-utils';
+import UploadVideoForm from '@/components/upload-video-form';
 
 export default async function Home() {
-  const fileName = crypto.randomUUID();
-  const videoFileUploadCommand = new PutObjectCommand({
-    Bucket: Resource.UserVideoBucket.name,
-    Key: `${fileName}/${fileName}`,
-  });
-  const videoFileUrl = await getSignedUrl(s3, videoFileUploadCommand);
-
-  const videoConfigUploadCommand = new PutObjectCommand({
-    Bucket: Resource.UserVideoBucket.name,
-    Key: `${fileName}/${fileName}.json`,
-  });
-  const videoConfigUrl = await getSignedUrl(s3, videoConfigUploadCommand);
-
   return (
     <main className="p-4">
-      <Form
-        videoFileUrl={videoFileUrl}
-        videoConfigUrl={videoConfigUrl}
-      />
+      <UploadVideoForm />
     </main>
   );
 }

@@ -5,6 +5,6 @@ export const getFileExtension = (fileName: string) => {
   if (matches?.length) {
     return matches[0];
   } else {
-    return '';
+    return null;
   }
 };

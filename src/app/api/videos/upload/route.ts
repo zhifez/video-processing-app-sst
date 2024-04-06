@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
       throw new Error('Invalid ext input');
     }
 
-    if (ext.includes('.')) {
+    if (!ext.includes('.')) {
       ext = `.${ext}`;
     }
 
