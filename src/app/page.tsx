@@ -1,7 +1,7 @@
 import { Resource } from "sst";
 import Form from "@/components/form";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { s3 } from '@/utils/s3-utils';
 
 export default async function Home() {
