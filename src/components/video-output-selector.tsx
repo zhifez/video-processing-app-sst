@@ -1,4 +1,6 @@
 import { VideoFileType } from '@/utils/utils';
+import { Label } from './ui/label';
+import { Button } from './ui/button';
 
 type VideoOutputSelectorProps = {
   activeType: VideoFileType;
@@ -10,22 +12,17 @@ export const VideoOutputSelector: React.FC<VideoOutputSelectorProps> = ({
   onSelect,
 }) => (
   <>
-    <p className="font-semibold">Output:</p>
+    <Label className="font-semibold">Output</Label>
     <div className="grid grid-cols-4 gap-2">
       {Object.entries(VideoFileType).map((value, index) =>
-        <button
+        <Button
           type="button"
           key={index}
-          className={`rounded p-2
-          ${activeType === value[1] ?
-              'bg-blue-500 text-white' :
-              'bg-gray-100 hover:bg-gray-200 active:bg-gray-100'
-            }`}
+          variant={activeType === value[1] ? 'default' : 'ghost'}
           onClick={() => onSelect(value[1])}
-          disabled={activeType === value[1]}
         >
           {value[0]}
-        </button>)}
+        </Button>)}
     </div>
   </>
 );

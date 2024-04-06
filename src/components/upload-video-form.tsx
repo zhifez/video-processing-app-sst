@@ -4,6 +4,10 @@ import { getFileExtension, VideoFileType } from '@/utils/utils';
 import axios from 'axios';
 import { ChangeEvent, FormEvent, useState } from 'react';
 import { VideoOutputSelector } from './video-output-selector';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Card, CardContent, CardHeader } from './ui/card';
 
 const INPUT_ACCEPTED_FORMATS = 'video/*';
 const INPUT_MAX_FILE_SIZE = 1024 * 1024 * 5; // 5MB
@@ -96,32 +100,41 @@ export default function UploadVideoForm() {
   );
 
   return (
-    <form
-      className="w-1/3 flex flex-col gap-3 text-center"
-      onSubmit={onSubmit}
-    >
-      <input
-        name="file"
-        type="file"
-        accept={INPUT_ACCEPTED_FORMATS}
-        onChange={onSelectFile}
-        placeholder="Upload a video file (max 5MB)"
-        className="block w-full"
-      />
-      {file && <VideoOutputSelector
-        activeType={outputType}
-        onSelect={setOutputType}
-      />}
-      <button
-        type="submit"
-        className={`rounded p-2 font-semibold text-white 
-        bg-blue-500 ${!canUpload ? 'opacity-80' : 'hover:bg-blue-400 active:bg-blue-500 '}`}
-        disabled={!canUpload}
-      >
-        Convert
-      </button>
-      {error && <p className="text-red-500">{error}</p>}
-      {success && <p className="text-blue-500">File Uploaded Successfully</p>}
-    </form>
+    <Card>
+      <CardHeader>
+        <p className="text-xl font-semibold">Video Processing App</p>
+        <ul className="text-sm list-disc list-inside">
+          <li>Convert video to a different format</li>
+          <li>Reduce file size</li>
+        </ul>
+      </CardHeader>
+      <CardContent>
+        <form
+          className="flex flex-col gap-3"
+          onSubmit={onSubmit}
+        >
+          <Label>Upload a video file (max 5MB)</Label>
+          <Input
+            name="file"
+            type="file"
+            accept={INPUT_ACCEPTED_FORMATS}
+            onChange={onSelectFile}
+            className="block w-full"
+          />
+          {file && <VideoOutputSelector
+            activeType={outputType}
+            onSelect={setOutputType}
+          />}
+          <Button
+            type="submit"
+            disabled={!canUpload}
+          >
+            Convert
+          </Button>
+          {error && <p className="text-sm font-semibold text-center text-red-500">{error}</p>}
+          {success && <p className="text-sm font-semibold text-center">File Uploaded Successfully.</p>}
+        </form>
+      </CardContent>
+    </Card>
   );
 }
