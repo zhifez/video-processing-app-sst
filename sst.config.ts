@@ -24,9 +24,39 @@ export default $config({
       },
     });
 
+    const dynamoVideoRequestTable = new sst.aws.Dynamo('VideoRequestTable', {
+      fields: {
+        requestId: 'string',
+        status: 'string',
+        updatedAt: 'string',
+        ttl: 'number',
+      },
+      primaryIndex: {
+        hashKey: 'requestId',
+        rangeKey: 'status',
+      },
+      globalIndexes: {
+        UpdatedAtIndex: {
+          hashKey: 'requestId',
+          rangeKey: 'updatedAt',
+        },
+        ttlIndexes: {
+          hashKey: 'requestId',
+          rangeKey: 'ttl',
+        },
+      },
+    });
+
     new sst.aws.Nextjs('MainSite', {
       link: [
         bucketUserVideo,
+        dynamoVideoRequestTable,
+      ],
+      permissions: [
+        {
+          actions: ['dynamodb:*'],
+          resources: [`arn:aws:dynamodb:::${dynamoVideoRequestTable.name}/*`],
+        },
       ],
     });
 

@@ -1,4 +1,6 @@
-import { s3 } from '@/utils/s3-utils';
+import { StatusType } from '@/schemas/types';
+import { dynamo, s3 } from '@/utils/s3-utils';
+import { PutItemCommand } from '@aws-sdk/client-dynamodb';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { NextRequest, NextResponse } from 'next/server';
@@ -17,21 +19,38 @@ export async function GET(request: NextRequest) {
       ext = `.${ext}`;
     }
 
-    // TODO: Create a record on DynamoDB
+    // Create a record on DynamoDB
+    const requestId = crypto.randomUUID();
+    const createVideoRequestCommand = new PutItemCommand({
+      TableName: Resource.VideoRequestTable.name,
+      Item: {
+        'requestId': {
+          S: requestId,
+        },
+        'status': {
+          S: StatusType.IN_PROGRESS,
+        },
+        'updatedAt': {
+          S: new Date().toISOString(),
+        },
+      },
+    });
 
     // Generate and return presigned url
-    const fileName = crypto.randomUUID();
     const videoUploadCommand = new PutObjectCommand({
       Bucket: Resource.UserVideoBucket.name,
-      Key: `${fileName}/${fileName}${ext}`,
+      Key: `${requestId}/${requestId}${ext}`,
     });
-    const videoUploadUrl = await getSignedUrl(s3, videoUploadCommand);
-
     const configUploadCommand = new PutObjectCommand({
       Bucket: Resource.UserVideoBucket.name,
-      Key: `${fileName}/${fileName}.json`,
+      Key: `${requestId}/${requestId}.json`,
     });
-    const configUploadUrl = await getSignedUrl(s3, configUploadCommand);
+
+    const [_, videoUploadUrl, configUploadUrl] = await Promise.all([
+      dynamo.send(createVideoRequestCommand),
+      getSignedUrl(s3, videoUploadCommand),
+      getSignedUrl(s3, configUploadCommand),
+    ]);
 
     return NextResponse.json({
       videoUploadUrl,
