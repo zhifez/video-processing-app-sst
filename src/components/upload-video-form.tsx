@@ -70,6 +70,7 @@ export default function UploadVideoForm() {
 
       // Upload config file
       const config: VideoProcessingConfigType = {
+        requestId,
         fromExt: videoFile.type,
         toExt: outputType.toString(),
       };

@@ -9,6 +9,7 @@ export const GetVideosUploadResponseSchema = z.object({
 export type GetVideosUploadResponseType = z.infer<typeof GetVideosUploadResponseSchema>;
 
 export const VideoProcessingConfigSchema = z.object({
+  requestId: z.string(),
   fromExt: z.string(),
   toExt: z.string().optional(), // Needed for conversion to different format
 });

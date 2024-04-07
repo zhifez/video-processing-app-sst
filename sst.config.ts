@@ -81,7 +81,21 @@ export default $config({
     // Lambda: Trigger every time something is uploaded to S3
     bucketUserVideo.subscribe({
       handler: 'src/lambdas/video-processing.handler',
-      link: [bucketUserVideo],
+      link: [
+        bucketUserVideo,
+        dynamoVideoRequestTable,
+      ],
+      permissions: [
+        {
+          actions: [
+            'dynamodb:UpdateItem',
+            'dynamodb:Query',
+          ],
+          resources: [
+            `arn:aws:dynamodb:::${dynamoVideoRequestTable.name}/*`,
+          ],
+        },
+      ],
     }, {
       filterSuffix: '.json',
       events: ['s3:ObjectCreated:*'],
