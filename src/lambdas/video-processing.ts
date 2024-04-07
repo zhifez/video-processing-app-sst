@@ -3,10 +3,50 @@ import { VideoProcessingConfigType } from '@/schemas/videos-api-schemas';
 import { dynamo, s3 } from '@/utils/s3-utils';
 import { streamToBuffer } from '@/utils/utils';
 import { UpdateItemCommand } from '@aws-sdk/client-dynamodb';
-import { GetObjectCommand } from '@aws-sdk/client-s3';
+import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { S3Event } from 'aws-lambda';
+import { execFile } from 'child_process';
+import { createWriteStream, readFileSync } from 'fs';
 import { Resource } from 'sst';
 import { Readable } from 'stream';
+import { pipeline } from 'stream/promises';
+
+const FFMPEG_PATH = '/opt/bin/ffmpeg-7.0';
+
+const downloadFromS3 = async (Key: string, fileName: string) => {
+  const { Body } = await s3.send(new GetObjectCommand({
+    Bucket: Resource.UserVideoBucket.name,
+    Key,
+  }));
+  if (Body instanceof Readable) {
+    await pipeline(
+      Body,
+      createWriteStream(`/tmp/${fileName}`)
+    );
+  } else {
+    throw new Error('Expected a stream for Body');
+  }
+};
+
+const executeFfmpeg = (inputPath: string, outputPath: string) => {
+  return new Promise((resolve, reject) => {
+    execFile(FFMPEG_PATH, ['-i', inputPath, outputPath], (error, stdout, stderr) => {
+      if (error) {
+        return reject(error);
+      }
+      resolve({ stdout, stderr });
+    });
+  });
+};
+
+const uploadToS3 = async (Key: string, fileName: string,) => {
+  const fileContent = readFileSync(`/tmp/${fileName}`);
+  await s3.send(new PutObjectCommand({
+    Bucket: Resource.UserVideoBucket.name,
+    Key,
+    Body: fileContent,
+  }));
+};
 
 export const handler = async (event: S3Event) => {
   console.log('//----- Video Processing Start -----//');
@@ -23,7 +63,8 @@ export const handler = async (event: S3Event) => {
     const jsonBuffer = await streamToBuffer(Body as Readable);
     config = JSON.parse(jsonBuffer.toString());
   } catch (error) {
-    console.log('Error retrieving config file:', { error });
+    console.log('Error downloading config file:', { error });
+    return;
   }
 
   if (!config) {
@@ -48,9 +89,19 @@ export const handler = async (event: S3Event) => {
   }));
   console.log('Request status updated to IN_PROGRESS');
 
-  // TODO: Download video file from bucket
-
-  console.log('Video file downloaded successful');
+  // Download video file from bucket
+  try {
+    const videoFileName = `${config.requestId}.${config.fromExt.replace('video/', '')}`;
+    const videoFileKey = `${config.requestId}/${videoFileName}`;
+    downloadFromS3(
+      videoFileKey,
+      videoFileName,
+    );
+    console.log('Video file downloaded successful');
+  } catch (error) {
+    console.log('Error downloading video file:', { error });
+    return;
+  }
 
   // TODO: Process video with FFMPEG based on config
   console.log('Video processed successful');
