@@ -31,6 +31,7 @@ export default $config({
         userId: 'string',
         requestId: 'string',
         status: 'string',
+        message: 'string',
         updatedAt: 'number',
         ttl: 'number',
       },
@@ -50,6 +51,10 @@ export default $config({
         TtlIndex: {
           hashKey: 'userId',
           rangeKey: 'ttl',
+        },
+        MessageIndex: {
+          hashKey: 'userId',
+          rangeKey: 'message',
         },
       },
     });
