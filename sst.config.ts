@@ -1,5 +1,4 @@
 /// <reference path="./.sst/platform/config.d.ts" />
-require('dotenv').config();
 
 export default $config({
   app(input) {
@@ -81,7 +80,7 @@ export default $config({
         },
       ],
     });
-    console.log({ FFMPEG_LAYER: secretFfmpegLayerArn.value as unknown as string });
+
     // Lambda: Trigger every time something is uploaded to S3
     bucketUserVideo.subscribe({
       handler: 'src/lambdas/video-processing.handler',
