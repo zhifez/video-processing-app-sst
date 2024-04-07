@@ -1,4 +1,5 @@
 /// <reference path="./.sst/platform/config.d.ts" />
+require('dotenv').config();
 
 export default $config({
   app(input) {
@@ -14,6 +15,9 @@ export default $config({
     };
   },
   async run() {
+    // Secrets
+    const secretFfmpegLayerArn = new sst.Secret('FfmpegLayerArn');
+
     // S3: Store video and json files
     const bucketUserVideo = new sst.aws.Bucket('UserVideoBucket', {
       public: true,
@@ -77,7 +81,7 @@ export default $config({
         },
       ],
     });
-
+    console.log({ FFMPEG_LAYER: secretFfmpegLayerArn.value as unknown as string });
     // Lambda: Trigger every time something is uploaded to S3
     bucketUserVideo.subscribe({
       handler: 'src/lambdas/video-processing.handler',
@@ -95,6 +99,9 @@ export default $config({
             `arn:aws:dynamodb:::${dynamoVideoRequestTable.name}/*`,
           ],
         },
+      ],
+      layers: [
+        secretFfmpegLayerArn.value as unknown as string,
       ],
     }, {
       filterSuffix: '.json',
