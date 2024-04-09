@@ -5,15 +5,15 @@ import { streamToBuffer } from '@/utils/utils';
 import { UpdateItemCommand } from '@aws-sdk/client-dynamodb';
 import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { S3Event } from 'aws-lambda';
-import { execFile } from 'child_process';
+import { execFile, spawnSync } from 'child_process';
 import { createWriteStream, readFileSync } from 'fs';
 import { Resource } from 'sst';
 import { Readable } from 'stream';
 import { pipeline } from 'stream/promises';
 
-const FFMPEG_PATH = '/opt/bin/ffmpeg-7.0';
+const FFMPEG_PATH = '/opt/ffmpeg-6.1-amd64-static/ffmpeg';
 
-const downloadFromS3 = async (Key: string, fileName: string) => {
+const downloadFromS3 = async (Key: string, videoFilePath: string) => {
   const { Body } = await s3.send(new GetObjectCommand({
     Bucket: Resource.UserVideoBucket.name,
     Key,
@@ -21,32 +21,58 @@ const downloadFromS3 = async (Key: string, fileName: string) => {
   if (Body instanceof Readable) {
     await pipeline(
       Body,
-      createWriteStream(`/tmp/${fileName}`)
+      createWriteStream(videoFilePath)
     );
   } else {
     throw new Error('Expected a stream for Body');
   }
 };
 
-const executeFfmpeg = (inputPath: string, outputPath: string) => {
+const executeFfmpeg = (inputFilePath: string, outputFilePath: string) => {
   return new Promise((resolve, reject) => {
-    execFile(FFMPEG_PATH, ['-i', inputPath, outputPath], (error, stdout, stderr) => {
-      if (error) {
-        return reject(error);
+    execFile(
+      FFMPEG_PATH,
+      [
+        '-i',
+        inputFilePath,
+        outputFilePath,
+      ],
+      (error, stdout, stderr) => {
+        if (error) {
+          return reject(error);
+        }
+        resolve({ stdout, stderr });
       }
-      resolve({ stdout, stderr });
-    });
+    );
   });
 };
 
-const uploadToS3 = async (Key: string, fileName: string,) => {
-  const fileContent = readFileSync(`/tmp/${fileName}`);
+const uploadToS3 = async (Key: string, outputFilePath: string,) => {
+  const fileContent = readFileSync(outputFilePath);
   await s3.send(new PutObjectCommand({
     Bucket: Resource.UserVideoBucket.name,
     Key,
     Body: fileContent,
   }));
 };
+
+const updateRequestStatus = (
+  requestId: string,
+  statusType: StatusType,
+) => dynamo.send(new UpdateItemCommand({
+  TableName: Resource.VideoRequestTable.name,
+  Key: {
+    'userId': { S: 'NO_USER' },
+    'requestId': { S: requestId },
+  },
+  UpdateExpression: 'set #statusCol = :newStatus',
+  ExpressionAttributeNames: {
+    '#statusCol': 'status',
+  },
+  ExpressionAttributeValues: {
+    ':newStatus': { S: statusType },
+  },
+}));
 
 export const handler = async (event: S3Event) => {
   console.log('//----- Video Processing Start -----//');
@@ -59,9 +85,9 @@ export const handler = async (event: S3Event) => {
       Bucket: Resource.UserVideoBucket.name,
       Key: recordKey,
     }));
-    console.log('Config file downloaded successfully:', { config });
     const jsonBuffer = await streamToBuffer(Body as Readable);
     config = JSON.parse(jsonBuffer.toString());
+    console.log('Config file downloaded successfully:', { config });
   } catch (error) {
     console.log('Error downloading config file:', { error });
     return;
@@ -90,12 +116,16 @@ export const handler = async (event: S3Event) => {
   console.log('Request status updated to IN_PROGRESS');
 
   // Download video file from bucket
-  const videoFileName = `${config.requestId}.${config.fromExt.replace('video/', '')}`;
+  const fromExt = config.fromExt.replace('video/', '');
+  const toExt = config.toExt?.replace('video/', '') ?? fromExt;
+  const videoFileName = `${config.requestId}.${fromExt}`;
   const videoFileKey = `${config.requestId}/${videoFileName}`;
+  const videoFilePath = `/tmp/${videoFileName}`;
+  const outputFilePath = `/tmp/output.${toExt}`;
   try {
-    downloadFromS3(
+    await downloadFromS3(
       videoFileKey,
-      videoFileName,
+      videoFilePath,
     );
     console.log('Video file downloaded successful');
   } catch (error) {
@@ -103,30 +133,47 @@ export const handler = async (event: S3Event) => {
     return;
   }
 
-  // TODO: Process video with FFMPEG based on config
-  console.log('Video processed successful');
+  // Process video with FFMPEG based on config
+  try {
+    // spawnSync('ls', ['/opt'], { stdio: 'inherit' });
+    await executeFfmpeg(
+      videoFilePath,
+      outputFilePath,
+    );
+    console.log('Video file processed successful');
+  } catch (error) {
+    console.log('Error processing video file:', { error });
+    await updateRequestStatus(
+      config.requestId,
+      StatusType.FAILED,
+    );
+    return;
+  }
 
-  // TODO: Upload processed video to bucket
-  console.log('Uploaded processed video to bucket');
+  // Upload processed video to bucket
+  try {
+    await uploadToS3(
+      `${config.requestId}/${config.requestId}.${toExt}`,
+      outputFilePath,
+    );
+    console.log('Uploaded processed video to bucket');
+  } catch (error) {
+    console.log('Error uploading processed video file to bucket:', { error });
+    await updateRequestStatus(
+      config.requestId,
+      StatusType.FAILED,
+    );
+    return;
+  }
 
   // TODO: Delete original video from bucket to save space
   console.log('Deleted original video from bucket');
 
   // Update request status to COMPLETED
-  await dynamo.send(new UpdateItemCommand({
-    TableName: Resource.VideoRequestTable.name,
-    Key: {
-      'userId': { S: 'NO_USER' },
-      'requestId': { S: config.requestId },
-    },
-    UpdateExpression: 'set #statusCol = :newStatus',
-    ExpressionAttributeNames: {
-      '#statusCol': 'status',
-    },
-    ExpressionAttributeValues: {
-      ':newStatus': { S: StatusType.COMPLETED },
-    },
-  }));
+  await updateRequestStatus(
+    config.requestId,
+    StatusType.COMPLETED,
+  );
   console.log('Request status updated to COMPLETED');
 
   console.log('//----- Video Processing End -----//');
