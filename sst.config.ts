@@ -81,8 +81,22 @@ export default $config({
       ],
     });
 
-    // Lambda: Trigger every time something is uploaded to S3
+    // Queues
+    const queueVideoRequest = new sst.aws.Queue('VideoRequestQueue');
+
+    // Lambda: Trigger and send queue when a json file is uploaded to S3
     bucketUserVideo.subscribe({
+      handler: 'src/lambdas/video-request-queue.handler',
+      link: [
+        queueVideoRequest,
+      ],
+    }, {
+      filterSuffix: '.json',
+      events: ['s3:ObjectCreated:*'],
+    });
+
+    // Lambda: Trigger and process video when a queue is sent
+    queueVideoRequest.subscribe({
       handler: 'src/lambdas/video-processing.handler',
       link: [
         bucketUserVideo,
@@ -104,9 +118,6 @@ export default $config({
       layers: [
         secretFfmpegLayerArn.value as unknown as string,
       ],
-    }, {
-      filterSuffix: '.json',
-      events: ['s3:ObjectCreated:*'],
     });
   },
 });

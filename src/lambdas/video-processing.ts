@@ -4,8 +4,8 @@ import { dynamo, s3 } from '@/utils/s3-utils';
 import { streamToBuffer } from '@/utils/utils';
 import { UpdateItemCommand } from '@aws-sdk/client-dynamodb';
 import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
-import { S3Event } from 'aws-lambda';
-import { execFile, spawnSync } from 'child_process';
+import { SQSEvent } from 'aws-lambda';
+import { execFile } from 'child_process';
 import { createWriteStream, readFileSync } from 'fs';
 import { Resource } from 'sst';
 import { Readable } from 'stream';
@@ -84,17 +84,17 @@ const updateRequestStatus = (
   },
 }));
 
-export const handler = async (event: S3Event) => {
+export const handler = async (event: SQSEvent) => {
   console.log('//----- Video Processing Start -----//');
 
   // Download and parse config file from bucket
-  const recordKey = event.Records[0].s3.object.key;
-  const requestId = recordKey.split('/')[0];
+  const queueData = JSON.parse(event.Records[0].body);
+  const requestId = queueData.requestId;
   let config: VideoProcessingConfigType | null = null;
   try {
     const { Body } = await s3.send(new GetObjectCommand({
       Bucket: Resource.UserVideoBucket.name,
-      Key: recordKey,
+      Key: `${requestId}/config.json`,
     }));
     const jsonBuffer = await streamToBuffer(Body as Readable);
     config = JSON.parse(jsonBuffer.toString());
