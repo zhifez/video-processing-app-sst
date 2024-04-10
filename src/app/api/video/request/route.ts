@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json<GetVideoRequestResponseType>({
           status: requestStatus,
-          fileName: `output.mp4`,
+          fileName: requestMessage?.split('/')[1],
           downloadLink,
         });
       }
