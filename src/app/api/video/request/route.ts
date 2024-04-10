@@ -32,6 +32,9 @@ export async function GET(request: NextRequest) {
         status: {
           S: requestStatus,
         },
+        message: {
+          S: requestMessage,
+        },
       } = response.Items[0];
       if (!requestStatus) {
         throw new Error('Failed to parse status enum');
@@ -40,9 +43,15 @@ export async function GET(request: NextRequest) {
       if (requestStatus === StatusType.COMPLETED) {
         // TODO: Generate download link
         return NextResponse.json<GetVideoRequestResponseType>({
-          status: StatusType.COMPLETED,
+          status: requestStatus,
           fileName: `${params.get('id')}.mp4`,
           downloadLink: '',
+        });
+      }
+      if (requestStatus === StatusType.FAILED) {
+        return NextResponse.json<GetVideoRequestResponseType>({
+          status: requestStatus,
+          errorMessage: requestMessage,
         });
       }
       return NextResponse.json<GetVideoRequestResponseType>({

@@ -11,7 +11,7 @@ import { Resource } from 'sst';
 import { Readable } from 'stream';
 import { pipeline } from 'stream/promises';
 
-const FFMPEG_PATH = '/opt/ffmpeg-6.1-amd64-static/ffmpeg';
+const FFMPEG_PATH = '/opt/ffmpeg/ffmpeg';
 
 const downloadFromS3 = async (Key: string, videoFilePath: string) => {
   const { Body } = await s3.send(new GetObjectCommand({
@@ -89,6 +89,7 @@ export const handler = async (event: S3Event) => {
 
   // Download and parse config file from bucket
   const recordKey = event.Records[0].s3.object.key;
+  const requestId = recordKey.split('/')[0];
   let config: VideoProcessingConfigType | null = null;
   try {
     const { Body } = await s3.send(new GetObjectCommand({
@@ -98,19 +99,29 @@ export const handler = async (event: S3Event) => {
     const jsonBuffer = await streamToBuffer(Body as Readable);
     config = JSON.parse(jsonBuffer.toString());
     console.log('Config file downloaded successfully:', { config });
-  } catch (error) {
+  } catch (error: any) {
     console.log('Error downloading config file:', { error });
+    await updateRequestStatus(
+      requestId,
+      StatusType.FAILED,
+      `Error Code: DCFG-${error.code}`,
+    );
     return;
   }
 
   if (!config) {
     console.log('Error parsing config file');
+    await updateRequestStatus(
+      requestId,
+      StatusType.FAILED,
+      `Error Code: PCFG`,
+    );
     return;
   }
 
   // Update request status to IN_PROGRESS
   await updateRequestStatus(
-    config.requestId,
+    requestId,
     StatusType.IN_PROGRESS,
     'Downloaded and parsed config file',
   );
@@ -120,7 +131,7 @@ export const handler = async (event: S3Event) => {
   const fromExt = config.fromExt.replace('video/', '');
   const toExt = config.toExt?.replace('video/', '') ?? fromExt;
   const videoFileName = `input.${fromExt}`;
-  const videoFileKey = `${config.requestId}/${videoFileName}`;
+  const videoFileKey = `${requestId}/${videoFileName}`;
   const videoFilePath = `/tmp/${videoFileName}`;
   const outputFilePath = `/tmp/output.${toExt}`;
   try {
@@ -129,8 +140,13 @@ export const handler = async (event: S3Event) => {
       videoFilePath,
     );
     console.log('Video file downloaded successful');
-  } catch (error) {
+  } catch (error: any) {
     console.log('Error downloading video file:', { error });
+    await updateRequestStatus(
+      requestId,
+      StatusType.FAILED,
+      `Error Code: DWLD-${error.code}`,
+    );
     return;
   }
 
@@ -145,9 +161,9 @@ export const handler = async (event: S3Event) => {
   } catch (error: any) {
     console.log('Error processing video file:', { error });
     await updateRequestStatus(
-      config.requestId,
+      requestId,
       StatusType.FAILED,
-      error.message,
+      `Error Code: FMPG-${error.code}`,
     );
     return;
   }
@@ -155,16 +171,16 @@ export const handler = async (event: S3Event) => {
   // Upload processed video to bucket
   try {
     await uploadToS3(
-      `${config.requestId}/output.${toExt}`,
+      `${requestId}/output.${toExt}`,
       outputFilePath,
     );
     console.log('Uploaded processed video to bucket');
   } catch (error: any) {
     console.log('Error uploading processed video file to bucket:', { error });
     await updateRequestStatus(
-      config.requestId,
+      requestId,
       StatusType.FAILED,
-      error.message,
+      `Error Code: UPLD-${error.code}`,
     );
     return;
   }
@@ -181,7 +197,7 @@ export const handler = async (event: S3Event) => {
 
   // Update request status to COMPLETED
   await updateRequestStatus(
-    config.requestId,
+    requestId,
     StatusType.COMPLETED,
     'Process complete',
   );
