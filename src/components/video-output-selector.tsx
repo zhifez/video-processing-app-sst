@@ -18,7 +18,7 @@ export const VideoOutputSelector: React.FC<VideoOutputSelectorProps> = ({
         <Button
           type="button"
           key={index}
-          variant={activeType === value[1] ? 'default' : 'ghost'}
+          variant={activeType === value[1] ? 'default' : 'secondary'}
           onClick={() => onSelect(value[1])}
         >
           {value[0]}

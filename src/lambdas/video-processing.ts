@@ -128,8 +128,8 @@ export const handler = async (event: S3Event) => {
   console.log('Request status updated to IN_PROGRESS');
 
   // Download video file from bucket
-  const fromExt = config.fromExt.replace('video/', '');
-  const toExt = config.toExt?.replace('video/', '') ?? fromExt;
+  const fromExt = config.fromExt;
+  const toExt = config.toExt ?? fromExt;
   const videoFileName = `input.${fromExt}`;
   const videoFileKey = `${requestId}/${videoFileName}`;
   const videoFilePath = `/tmp/${videoFileName}`;
