@@ -199,7 +199,7 @@ export const handler = async (event: S3Event) => {
   await updateRequestStatus(
     requestId,
     StatusType.COMPLETED,
-    'Process complete',
+    `${requestId}/output.${toExt}`,
   );
   console.log('Request status updated to COMPLETED');
 

@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react';
 import { BarLoader } from 'react-spinners';
 import { ExclamationTriangleIcon } from '@radix-ui/react-icons';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 const VideoByIdPage = ({
   params: {
@@ -72,8 +73,10 @@ const VideoByIdPage = ({
             width="100%"
           />}
         {videoRequest.status === StatusType.COMPLETED &&
-          <Button>
-            Download {videoRequest.fileName}
+          <Button asChild>
+            <Link href={videoRequest.downloadLink ?? '/'}>
+              Download {videoRequest.fileName}
+            </Link>
           </Button>}
         {videoRequest.status === StatusType.FAILED &&
           <>

@@ -1,7 +1,9 @@
 import { StatusType } from '@/schemas/types';
 import { GetVideoRequestResponseType } from '@/schemas/videos-api-schemas';
-import { dynamo } from '@/utils/s3-utils';
+import { dynamo, s3 } from '@/utils/s3-utils';
 import { QueryCommand } from '@aws-sdk/client-dynamodb';
+import { GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { NextRequest, NextResponse } from 'next/server';
 import { Resource } from 'sst';
 
@@ -41,11 +43,20 @@ export async function GET(request: NextRequest) {
       }
 
       if (requestStatus === StatusType.COMPLETED) {
-        // TODO: Generate download link
+        // Generate download link
+        const downloadLink = await getSignedUrl(
+          s3,
+          new GetObjectCommand({
+            Bucket: Resource.UserVideoBucket.name,
+            // Output key is passed as message for COMPLETED state
+            Key: requestMessage,
+          }),
+        );
+
         return NextResponse.json<GetVideoRequestResponseType>({
           status: requestStatus,
-          fileName: `${params.get('id')}.mp4`,
-          downloadLink: '',
+          fileName: `output.mp4`,
+          downloadLink,
         });
       }
       if (requestStatus === StatusType.FAILED) {
@@ -60,7 +71,7 @@ export async function GET(request: NextRequest) {
     } else {
       return NextResponse.json<GetVideoRequestResponseType>({
         status: StatusType.FAILED,
-        errorMessage: 'Unable to find request'
+        errorMessage: 'Failed to process request'
       }, {
         status: 404,
       });

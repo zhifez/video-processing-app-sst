@@ -88,6 +88,8 @@ export default $config({
         bucketUserVideo,
         dynamoVideoRequestTable,
       ],
+      // FFMPEG might take some time to work depending on video size and complexity of command
+      timeout: '5 minutes',
       permissions: [
         {
           actions: [
