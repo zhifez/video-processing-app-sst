@@ -91,6 +91,11 @@ const VideoByIdPage = ({
               Retry
             </Button>
           </>}
+        <Button variant="ghost" asChild>
+          <Link href="/">
+            Back
+          </Link>
+        </Button>
       </CardContent>
     </Card>
   );
