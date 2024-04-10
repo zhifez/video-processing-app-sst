@@ -1,6 +1,6 @@
 # Video Processing App
 
-An event-driven app that utilises FFMPEG to compress video.
+An event-driven app that utilises FFMPEG to process video.
 
 ## Architecture
 
