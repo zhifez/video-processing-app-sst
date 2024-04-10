@@ -97,7 +97,7 @@ export default function UploadVideoForm() {
   };
 
   const canUpload = (
-    !loading && file && file.type !== outputType
+    !loading && file && !file.type.includes(outputType)
   );
 
   return (
