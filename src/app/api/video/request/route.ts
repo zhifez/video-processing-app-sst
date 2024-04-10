@@ -1,8 +1,9 @@
 import { StatusType } from '@/schemas/types';
 import { GetVideoRequestResponseType } from '@/schemas/videos-api-schemas';
-import { dynamo, s3 } from '@/utils/s3-utils';
+import { dynamo, s3, sqs } from '@/utils/s3-utils';
 import { QueryCommand } from '@aws-sdk/client-dynamodb';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
+import { SendMessageCommand } from '@aws-sdk/client-sqs';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { NextRequest, NextResponse } from 'next/server';
 import { Resource } from 'sst';
@@ -13,6 +14,20 @@ export async function GET(request: NextRequest) {
     const requestId = params.get('id');
     if (!requestId) {
       throw new Error('RequestId not found');
+    }
+
+    const retry = params.get('retry');
+    if (retry) {
+      // Send SQS event with request ID, which will trigger the lambda to redo operation
+      await sqs.send(new SendMessageCommand({
+        QueueUrl: Resource.VideoRequestQueue.url,
+        MessageBody: JSON.stringify({
+          requestId,
+        }),
+      }));
+      return NextResponse.json<GetVideoRequestResponseType>({
+        status: StatusType.IN_PROGRESS,
+      });
     }
 
     const queryVideoRequestCommand = new QueryCommand({

@@ -28,6 +28,9 @@ export default $config({
       },
     });
 
+    // Queues
+    const queueVideoRequest = new sst.aws.Queue('VideoRequestQueue');
+
     // DynamoDB: Store video processing requests
     const dynamoVideoRequestTable = new sst.aws.Dynamo('VideoRequestTable', {
       fields: {
@@ -67,22 +70,22 @@ export default $config({
       link: [
         bucketUserVideo,
         dynamoVideoRequestTable,
+        queueVideoRequest,
       ],
       permissions: [
         {
           actions: [
             'dynamodb:PutItem',
             'dynamodb:Query',
+            'sqs:sendmessage',
           ],
           resources: [
             `arn:aws:dynamodb:::${dynamoVideoRequestTable.name}/*`,
+            queueVideoRequest.arn,
           ],
         },
       ],
     });
-
-    // Queues
-    const queueVideoRequest = new sst.aws.Queue('VideoRequestQueue');
 
     // Lambda: Trigger and send queue when a json file is uploaded to S3
     bucketUserVideo.subscribe({

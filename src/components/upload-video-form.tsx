@@ -1,5 +1,5 @@
 'use client';
-import { GetVideosUploadResponseSchema, GetVideosUploadResponseType, VideoProcessingConfigType } from '@/schemas/videos-api-schemas';
+import { GetVideosUploadResponseSchema, VideoProcessingConfigType } from '@/schemas/videos-api-schemas';
 import { getFileExtension } from '@/utils/utils';
 import axios from 'axios';
 import { ChangeEvent, FormEvent, useState } from 'react';

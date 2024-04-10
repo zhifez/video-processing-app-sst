@@ -145,7 +145,7 @@ export const handler = async (event: SQSEvent) => {
     await updateRequestStatus(
       requestId,
       StatusType.FAILED,
-      `Error Code: DWLD-${error.code}`,
+      `Error Code: DWLD-${error.code ?? 'ENOENT'}`,
     );
     return;
   }

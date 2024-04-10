@@ -5,10 +5,9 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { StatusType } from '@/schemas/types';
 import { GetVideoRequestResponseSchema, GetVideoRequestResponseType } from '@/schemas/videos-api-schemas';
 import axios from 'axios';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { BarLoader } from 'react-spinners';
 import { ExclamationTriangleIcon } from '@radix-ui/react-icons';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 const VideoByIdPage = ({
@@ -20,12 +19,43 @@ const VideoByIdPage = ({
     id: string;
   },
 }) => {
-  const router = useRouter();
   const [videoRequest, setVideoRequest] = useState<GetVideoRequestResponseType>({
     status: StatusType.INACTIVE,
   });
+  const fetchVideoRequestInterval = useRef<NodeJS.Timeout>();
 
-  const fetchVideoRequest = async () => {
+  const fetchVideoRequest = () => {
+    fetchVideoRequestInterval.current = setInterval(async () => {
+      try {
+        const response = GetVideoRequestResponseSchema.parse(
+          (await axios.get(
+            '/api/video/request',
+            {
+              params: {
+                id,
+              },
+            },
+          )).data
+        );
+        setVideoRequest(response);
+        if (response.status === StatusType.COMPLETED ||
+          response.status === StatusType.FAILED
+        ) {
+          clearInterval(fetchVideoRequestInterval.current);
+        }
+      } catch (error) {
+        console.error('Error fetching video request:', error);
+      }
+    }, 3000);
+  };
+
+  useEffect(() => {
+    fetchVideoRequest();
+    return () => clearInterval(fetchVideoRequestInterval.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const onRetry = async () => {
     try {
       const response = GetVideoRequestResponseSchema.parse(
         (await axios.get(
@@ -33,24 +63,16 @@ const VideoByIdPage = ({
           {
             params: {
               id,
+              retry: true,
             },
           },
         )).data
       );
       setVideoRequest(response);
+      fetchVideoRequest();
     } catch (error) {
-      console.error('Error fetching video request:', error);
+      console.error('Error retrying video request:', error);
     }
-  };
-
-  useEffect(() => {
-    const id = setTimeout(fetchVideoRequest, 5000);
-    return () => clearTimeout(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const onRetry = () => {
-    router.push('/');
   };
 
   return (
