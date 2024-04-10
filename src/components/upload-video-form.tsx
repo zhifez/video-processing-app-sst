@@ -1,6 +1,6 @@
 'use client';
 import { GetVideosUploadResponseSchema, GetVideosUploadResponseType, VideoProcessingConfigType } from '@/schemas/videos-api-schemas';
-import { getFileExtension, VideoFileType } from '@/utils/utils';
+import { getFileExtension } from '@/utils/utils';
 import axios from 'axios';
 import { ChangeEvent, FormEvent, useState } from 'react';
 import { VideoOutputSelector } from './video-output-selector';
@@ -8,7 +8,8 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Card, CardContent, CardHeader } from './ui/card';
-import { redirect, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
+import { VideoFileType } from '@/schemas/types';
 
 const INPUT_ACCEPTED_FORMATS = 'video/*';
 const INPUT_MAX_FILE_SIZE = 1024 * 1024 * 5; // 5MB

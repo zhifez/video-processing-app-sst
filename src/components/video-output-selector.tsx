@@ -1,6 +1,6 @@
-import { VideoFileType } from '@/utils/utils';
 import { Label } from './ui/label';
 import { Button } from './ui/button';
+import { VideoFileType } from '@/schemas/types';
 
 type VideoOutputSelectorProps = {
   activeType: VideoFileType;
