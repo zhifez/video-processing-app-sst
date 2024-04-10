@@ -48,11 +48,11 @@ export async function GET(request: NextRequest) {
     // Generate and return presigned url
     const videoUploadCommand = new PutObjectCommand({
       Bucket: Resource.UserVideoBucket.name,
-      Key: `${requestId}/${requestId}${ext}`,
+      Key: `${requestId}/input${ext}`,
     });
     const configUploadCommand = new PutObjectCommand({
       Bucket: Resource.UserVideoBucket.name,
-      Key: `${requestId}/${requestId}.json`,
+      Key: `${requestId}/config.json`,
     });
 
     const [_, videoUploadUrl, configUploadUrl] = await Promise.all([

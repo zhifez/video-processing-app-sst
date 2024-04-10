@@ -3,7 +3,7 @@ import { VideoProcessingConfigType } from '@/schemas/videos-api-schemas';
 import { dynamo, s3 } from '@/utils/s3-utils';
 import { streamToBuffer } from '@/utils/utils';
 import { UpdateItemCommand } from '@aws-sdk/client-dynamodb';
-import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
+import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { S3Event } from 'aws-lambda';
 import { execFile, spawnSync } from 'child_process';
 import { createWriteStream, readFileSync } from 'fs';
@@ -56,21 +56,31 @@ const uploadToS3 = async (Key: string, outputFilePath: string,) => {
   }));
 };
 
+const deleteFromS3 = async (Key: string) => {
+  await s3.send(new DeleteObjectCommand({
+    Bucket: Resource.UserVideoBucket.name,
+    Key,
+  }));
+};
+
 const updateRequestStatus = (
   requestId: string,
   statusType: StatusType,
+  message: string,
 ) => dynamo.send(new UpdateItemCommand({
   TableName: Resource.VideoRequestTable.name,
   Key: {
     'userId': { S: 'NO_USER' },
     'requestId': { S: requestId },
   },
-  UpdateExpression: 'set #statusCol = :newStatus',
+  // Note: Using attribute name because status is a reserved keyword
+  UpdateExpression: 'set #statusCol = :newStatus, message = :message',
   ExpressionAttributeNames: {
     '#statusCol': 'status',
   },
   ExpressionAttributeValues: {
     ':newStatus': { S: statusType },
+    ':message': { S: message, },
   },
 }));
 
@@ -99,26 +109,17 @@ export const handler = async (event: S3Event) => {
   }
 
   // Update request status to IN_PROGRESS
-  await dynamo.send(new UpdateItemCommand({
-    TableName: Resource.VideoRequestTable.name,
-    Key: {
-      'userId': { S: 'NO_USER' },
-      'requestId': { S: config.requestId },
-    },
-    UpdateExpression: 'set #statusCol = :newStatus',
-    ExpressionAttributeNames: {
-      '#statusCol': 'status',
-    },
-    ExpressionAttributeValues: {
-      ':newStatus': { S: StatusType.IN_PROGRESS },
-    },
-  }));
+  await updateRequestStatus(
+    config.requestId,
+    StatusType.IN_PROGRESS,
+    'Downloaded and parsed config file',
+  );
   console.log('Request status updated to IN_PROGRESS');
 
   // Download video file from bucket
   const fromExt = config.fromExt.replace('video/', '');
   const toExt = config.toExt?.replace('video/', '') ?? fromExt;
-  const videoFileName = `${config.requestId}.${fromExt}`;
+  const videoFileName = `input.${fromExt}`;
   const videoFileKey = `${config.requestId}/${videoFileName}`;
   const videoFilePath = `/tmp/${videoFileName}`;
   const outputFilePath = `/tmp/output.${toExt}`;
@@ -141,11 +142,12 @@ export const handler = async (event: S3Event) => {
       outputFilePath,
     );
     console.log('Video file processed successful');
-  } catch (error) {
+  } catch (error: any) {
     console.log('Error processing video file:', { error });
     await updateRequestStatus(
       config.requestId,
       StatusType.FAILED,
+      error.message,
     );
     return;
   }
@@ -153,26 +155,35 @@ export const handler = async (event: S3Event) => {
   // Upload processed video to bucket
   try {
     await uploadToS3(
-      `${config.requestId}/${config.requestId}.${toExt}`,
+      `${config.requestId}/output.${toExt}`,
       outputFilePath,
     );
     console.log('Uploaded processed video to bucket');
-  } catch (error) {
+  } catch (error: any) {
     console.log('Error uploading processed video file to bucket:', { error });
     await updateRequestStatus(
       config.requestId,
       StatusType.FAILED,
+      error.message,
     );
     return;
   }
 
-  // TODO: Delete original video from bucket to save space
-  console.log('Deleted original video from bucket');
+  // Delete original video from bucket to save space
+  try {
+    await deleteFromS3(
+      videoFileKey,
+    );
+    console.log('Deleted original video from bucket');
+  } catch (error: any) {
+    console.log('Error deleting original video from bucket:', { error });
+  }
 
   // Update request status to COMPLETED
   await updateRequestStatus(
     config.requestId,
     StatusType.COMPLETED,
+    'Process complete',
   );
   console.log('Request status updated to COMPLETED');
 
