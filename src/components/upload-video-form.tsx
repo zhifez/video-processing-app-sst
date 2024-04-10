@@ -3,7 +3,7 @@ import { GetVideosUploadResponseSchema, GetVideosUploadResponseType, VideoProces
 import { getFileExtension } from '@/utils/utils';
 import axios from 'axios';
 import { ChangeEvent, FormEvent, useState } from 'react';
-import { VideoOutputSelector } from './video-output-selector';
+import { MediaOutputSelector } from './media-output-selector';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -72,7 +72,7 @@ export default function UploadVideoForm() {
       // Upload config file
       const config: VideoProcessingConfigType = {
         requestId,
-        fromExt: videoFile.type,
+        fromExt: videoFile.type.replace('video/', ''),
         toExt: outputType.toString(),
       };
       const configFile = new Blob([JSON.stringify(config)], {
@@ -122,7 +122,7 @@ export default function UploadVideoForm() {
             onChange={onSelectFile}
             className="block w-full"
           />
-          {file && <VideoOutputSelector
+          {file && <MediaOutputSelector
             activeType={outputType}
             onSelect={setOutputType}
           />}

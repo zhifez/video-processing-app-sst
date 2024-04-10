@@ -2,12 +2,12 @@ import { Label } from './ui/label';
 import { Button } from './ui/button';
 import { VideoFileType } from '@/schemas/types';
 
-type VideoOutputSelectorProps = {
+type MediaOutputSelectorProps = {
   activeType: VideoFileType;
   onSelect: (type: VideoFileType) => void;
 };
 
-export const VideoOutputSelector: React.FC<VideoOutputSelectorProps> = ({
+export const MediaOutputSelector: React.FC<MediaOutputSelectorProps> = ({
   activeType,
   onSelect,
 }) => (
