@@ -1,7 +1,7 @@
-import { StatusType } from '@/schemas/types';
+import { ScaleMetric, StatusType } from '@/schemas/types';
 import { VideoProcessingConfigType } from '@/schemas/videos-api-schemas';
 import { dynamo, s3 } from '@/utils/s3-utils';
-import { streamToBuffer } from '@/utils/utils';
+import { getFfmpegScaleAlgo, streamToBuffer } from '@/utils/utils';
 import { UpdateItemCommand } from '@aws-sdk/client-dynamodb';
 import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { SQSEvent } from 'aws-lambda';
@@ -28,15 +28,23 @@ const downloadFromS3 = async (Key: string, videoFilePath: string) => {
   }
 };
 
-const executeFfmpeg = (inputFilePath: string, outputFilePath: string) => {
+const executeFfmpeg = (inputFilePath: string, outputFilePath: string, config: VideoProcessingConfigType) => {
+  const commands = [
+    // Convert to different format
+    '-i',
+    inputFilePath,
+    // Reduce file size (source: https://unix.stackexchange.com/a/447521)
+    ...(config.nextScaleMetric !== ScaleMetric.Full ? [
+      '-vf',
+      getFfmpegScaleAlgo(config.nextScaleMetric),
+    ] : []),
+    outputFilePath,
+  ];
+
   return new Promise((resolve, reject) => {
     execFile(
       FFMPEG_PATH,
-      [
-        '-i',
-        inputFilePath,
-        outputFilePath,
-      ],
+      commands,
       (error, stdout, stderr) => {
         if (error) {
           return reject(error);
@@ -129,7 +137,7 @@ export const handler = async (event: SQSEvent) => {
 
   // Download video file from bucket
   const fromExt = config.fromExt;
-  const toExt = config.toExt ?? fromExt;
+  const toExt = config.toExt;
   const videoFileName = `input.${fromExt}`;
   const videoFileKey = `${requestId}/${videoFileName}`;
   const videoFilePath = `/tmp/${videoFileName}`;
@@ -156,6 +164,7 @@ export const handler = async (event: SQSEvent) => {
     await executeFfmpeg(
       videoFilePath,
       outputFilePath,
+      config,
     );
     console.log('Video file processed successful');
   } catch (error: any) {

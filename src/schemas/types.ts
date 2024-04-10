@@ -16,3 +16,11 @@ export enum VideoFileType {
   WEBM = 'webm',      // WebM
   WMV = 'wmv',        // WMV
 };
+
+export enum ScaleMetric {
+  Full = '1',
+  Half = '1/2',
+  OneThird = '1/3',
+  Quarter = '1/4',
+  OneFifth = '1/5',
+}

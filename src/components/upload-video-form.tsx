@@ -9,7 +9,8 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { useRouter } from 'next/navigation';
-import { VideoFileType } from '@/schemas/types';
+import { ScaleMetric, VideoFileType } from '@/schemas/types';
+import { ScaleMetricSelector } from './scale-metric-selector';
 
 const INPUT_ACCEPTED_FORMATS = 'video/*';
 const INPUT_MAX_FILE_SIZE = 1024 * 1024 * 5; // 5MB
@@ -20,6 +21,7 @@ export default function UploadVideoForm() {
   const [loading, setLoading] = useState<boolean>(false);
   const [file, setFile] = useState<File | undefined>();
   const [outputType, setOutputType] = useState<VideoFileType>(VideoFileType.MP4);
+  const [nextScaleMetric, setNextScaleMetric] = useState<ScaleMetric>(ScaleMetric.Full);
   const [error, setError] = useState<string | undefined>();
 
   const onSelectFile = (e: ChangeEvent<HTMLInputElement>) => {
@@ -74,6 +76,7 @@ export default function UploadVideoForm() {
         requestId,
         fromExt: videoFile.type.replace('video/', ''),
         toExt: outputType.toString(),
+        nextScaleMetric,
       };
       const configFile = new Blob([JSON.stringify(config)], {
         type: 'application/json',
@@ -97,7 +100,10 @@ export default function UploadVideoForm() {
   };
 
   const canUpload = (
-    !loading && file && !file.type.includes(outputType)
+    !loading && file && (
+      !file.type.includes(outputType) ||
+      nextScaleMetric !== ScaleMetric.Full
+    )
   );
 
   return (
@@ -122,10 +128,16 @@ export default function UploadVideoForm() {
             onChange={onSelectFile}
             className="block w-full"
           />
-          {file && <MediaOutputSelector
-            activeType={outputType}
-            onSelect={setOutputType}
-          />}
+          {file && <>
+            <MediaOutputSelector
+              activeType={outputType}
+              onSelect={setOutputType}
+            />
+            <ScaleMetricSelector
+              activeType={nextScaleMetric}
+              onSelect={setNextScaleMetric}
+            />
+          </>}
           <Button
             type="submit"
             disabled={!canUpload}

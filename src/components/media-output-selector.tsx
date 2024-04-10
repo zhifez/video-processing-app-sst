@@ -12,7 +12,7 @@ export const MediaOutputSelector: React.FC<MediaOutputSelectorProps> = ({
   onSelect,
 }) => (
   <>
-    <Label className="font-semibold">Output</Label>
+    <Label>Output</Label>
     <div className="grid grid-cols-4 gap-2">
       {Object.entries(VideoFileType).map((value, index) =>
         <Button

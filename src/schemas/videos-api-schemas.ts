@@ -1,5 +1,5 @@
 import * as z from 'zod';
-import { StatusType } from './types';
+import { ScaleMetric, StatusType } from './types';
 
 export const GetVideosUploadResponseSchema = z.object({
   requestId: z.string(),
@@ -11,7 +11,8 @@ export type GetVideosUploadResponseType = z.infer<typeof GetVideosUploadResponse
 export const VideoProcessingConfigSchema = z.object({
   requestId: z.string(),
   fromExt: z.string(),
-  toExt: z.string().optional(), // Needed for conversion to different format
+  toExt: z.string(), // Needed for conversion to different format
+  nextScaleMetric: z.nativeEnum(ScaleMetric),
 });
 export type VideoProcessingConfigType = z.infer<typeof VideoProcessingConfigSchema>;
 
