@@ -4,11 +4,17 @@ An event-driven app that utilises FFMPEG to compress video.
 
 ## Architecture
 
-- NextJS App - For user to upload videos
-- S3 (UserVideoBucket) - Where the videos will be stored
-- Lambda (VideoProcessingService) - Compresses video using FFMPEG on video item created in S3
+- NextJS App - For user to upload videos and set configs
+- UserVideoBucket (S3) - Where the videos will be stored
+- VideoRequestQueue (SQS+Lambda) - Subscribe to S3 on object created, send queue
+- VideoProcessing (Lambda) - Subscribe to queue, process video using FFMPEG with the given config.json
 - DynamoDB (VideoProcessingRequest) - Store request records
-- Incognito - User auth and accounts
+
+## FFMPEG Note
+
+I've yet to figure out how to directly push a layer from sst config, so the FFMPEG layer is manually setup by storing the FFMPEG binary into a S3, assigning it to a layer, before having its arn assigned to a lambda.
+
+The FFMPEG binary is acquired from this site: https://johnvansickle.com/ffmpeg/
 
 ## Getting Started
 
