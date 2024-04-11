@@ -2,6 +2,9 @@
 
 An event-driven app that utilises FFMPEG to process video.
 
+![Screenshot 2024-04-11 at 10 11 12 AM](https://github.com/zhifez/video-processing-app-sst/assets/33366655/5c06c798-4eeb-45ed-b1c7-4abdda685274)
+
+
 ## System Design
 
 - NextJS App - For user to upload videos and set configs
