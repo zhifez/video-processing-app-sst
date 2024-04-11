@@ -40,3 +40,23 @@ To deploy, run:
 ```bash
 sst deploy
 ```
+
+## Troubleshoot
+
+FFMPEG operation can be quite heavy and timeout a lot:
+
+```
+Task timed out after 300.10 seconds
+```
+
+When that happens, increase the timeout (max 15 minutes).
+
+```
+queueVideoRequest.subscribe({
+  handler: 'src/lambdas/video-processing.handler',
+  ...
+  // FFMPEG might take some time to work depending on video size and complexity of command
+  timeout: '5 minutes', // '15 minutes' (max)
+  ...
+});
+```
