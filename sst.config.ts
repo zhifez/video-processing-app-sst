@@ -20,12 +20,6 @@ export default $config({
     // S3: Store video and json files
     const bucketUserVideo = new sst.aws.Bucket('UserVideoBucket', {
       public: true,
-      cors: {
-        allowHeaders: ["*"],
-        allowOrigins: ["*"],
-        allowMethods: ["DELETE", "GET", "HEAD", "POST", "PUT", "HEAD"],
-        exposeHeaders: [],
-      },
     });
 
     // Queues
@@ -72,19 +66,6 @@ export default $config({
         dynamoVideoRequestTable,
         queueVideoRequest,
       ],
-      permissions: [
-        {
-          actions: [
-            'dynamodb:PutItem',
-            'dynamodb:Query',
-            'sqs:sendmessage',
-          ],
-          resources: [
-            `arn:aws:dynamodb:::${dynamoVideoRequestTable.name}/*`,
-            queueVideoRequest.arn,
-          ],
-        },
-      ],
     });
 
     // Lambda: Trigger and send queue when a json file is uploaded to S3
@@ -107,17 +88,6 @@ export default $config({
       ],
       // FFMPEG might take some time to work depending on video size and complexity of command
       timeout: '5 minutes',
-      permissions: [
-        {
-          actions: [
-            'dynamodb:UpdateItem',
-            'dynamodb:Query',
-          ],
-          resources: [
-            `arn:aws:dynamodb:::${dynamoVideoRequestTable.name}/*`,
-          ],
-        },
-      ],
       layers: [
         secretFfmpegLayerArn.value as unknown as string,
       ],
