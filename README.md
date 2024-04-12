@@ -43,7 +43,7 @@ sst deploy
 ### Binary Upload
 
 I have yet to figure out how to directly push a layer from sst config, so the FFMPEG layer is manually setup as followed:
-1. Download FFMPEG binary (from (here)[https://johnvansickle.com/ffmpeg/]), uncompress it, rename it to "ffmpeg" and ZIP it.
+1. Download FFMPEG binary (from [here](https://johnvansickle.com/ffmpeg/)), uncompress it, rename it to "ffmpeg" and ZIP it.
 2. Upload it to S3
 3. Go to Lambda layers, create a new layer and pass in the URL.
 4. Copy the ARN of the layer, and save it in Secret with the key "FfmpegLayerArn":
