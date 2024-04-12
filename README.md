@@ -13,12 +13,6 @@ An event-driven app that utilises FFMPEG to process video.
 - VideoProcessing (Lambda) - Subscribe to queue, process video using FFMPEG with the given config.json
 - DynamoDB (VideoProcessingRequest) - Store request records
 
-## FFMPEG Note
-
-I've yet to figure out how to directly push a layer from sst config, so the FFMPEG layer is manually setup by storing the FFMPEG binary into a S3, assigning it to a layer, before having its arn assigned to a lambda.
-
-The FFMPEG binary is acquired from this site: https://johnvansickle.com/ffmpeg/
-
 ## Getting Started
 
 Before you get started:
@@ -44,7 +38,20 @@ To deploy, run:
 sst deploy
 ```
 
-## Troubleshoot
+## FFMPEG Notes
+
+### Binary Upload
+
+I have yet to figure out how to directly push a layer from sst config, so the FFMPEG layer is manually setup as followed:
+1. Download FFMPEG binary (from (here)[https://johnvansickle.com/ffmpeg/]), uncompress it, rename it to "ffmpeg" and ZIP it.
+2. Upload it to S3
+3. Go to Lambda layers, create a new layer and pass in the URL.
+4. Copy the ARN of the layer, and save it in Secret with the key "FfmpegLayerArn":
+```bash
+sst secret set FfmpegLayerArn <your-layer-arn>
+```
+
+### Timeout
 
 FFMPEG operation can be quite heavy and timeout a lot:
 
