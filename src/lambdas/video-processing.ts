@@ -1,6 +1,6 @@
 import { ScaleMetric, StatusType } from '@/schemas/types';
 import { VideoProcessingConfigType } from '@/schemas/videos-api-schemas';
-import { dynamo, s3 } from '@/utils/s3-utils';
+import { dynamo, s3 } from '@/app/api/utils';
 import { getFfmpegScaleAlgo, streamToBuffer } from '@/utils/utils';
 import { UpdateItemCommand } from '@aws-sdk/client-dynamodb';
 import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';

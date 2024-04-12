@@ -1,4 +1,4 @@
-import { sqs } from '@/utils/s3-utils';
+import { sqs } from '@/app/api/utils';
 import { SendMessageCommand } from '@aws-sdk/client-sqs';
 import { S3Event } from 'aws-lambda';
 import { Resource } from 'sst';

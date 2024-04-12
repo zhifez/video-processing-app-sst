@@ -1,6 +1,6 @@
 import { StatusType } from '@/schemas/types';
 import { GetVideoRequestResponseType } from '@/schemas/videos-api-schemas';
-import { dynamo, s3, sqs } from '@/utils/s3-utils';
+import { dynamo, s3, sqs } from '@/app/api/utils';
 import { QueryCommand } from '@aws-sdk/client-dynamodb';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { SendMessageCommand } from '@aws-sdk/client-sqs';

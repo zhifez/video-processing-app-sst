@@ -1,6 +1,6 @@
 import { StatusType } from '@/schemas/types';
 import { GetVideosUploadResponseType } from '@/schemas/videos-api-schemas';
-import { dynamo, s3 } from '@/utils/s3-utils';
+import { dynamo, s3 } from '@/app/api/utils';
 import { toEpochTime } from '@/utils/utils';
 import { PutItemCommand } from '@aws-sdk/client-dynamodb';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
