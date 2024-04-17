@@ -10,8 +10,14 @@ import { createWriteStream, readFileSync } from 'fs';
 import { Resource } from 'sst';
 import { Readable } from 'stream';
 import { pipeline } from 'stream/promises';
+import { baselimeLogger } from './utils';
+import { differenceInMilliseconds } from 'date-fns';
 
 const FFMPEG_PATH = '/opt/ffmpeg/ffmpeg';
+const LOG_NAMESPACE = 'video-processing-service';
+
+const logger = baselimeLogger(LOG_NAMESPACE);
+const logRequestId = crypto.randomUUID();
 
 const downloadFromS3 = async (Key: string, videoFilePath: string) => {
   const { Body } = await s3.send(new GetObjectCommand({
@@ -94,6 +100,7 @@ const updateRequestStatus = (
 
 export const handler = async (event: SQSEvent) => {
   console.log('//----- Video Processing Start -----//');
+  const startTime = Date.now();
 
   // Download and parse config file from bucket
   const queueData = JSON.parse(event.Records[0].body);
@@ -114,6 +121,16 @@ export const handler = async (event: SQSEvent) => {
       StatusType.FAILED,
       `Error Code: DCFG-${error.code}`,
     );
+    await logger([
+      {
+        requestId: logRequestId,
+        message: 'Error downloading or parsing config file',
+        error,
+        data: {
+          videoRequestId: requestId,
+        },
+      },
+    ]);
     return;
   }
 
@@ -155,6 +172,16 @@ export const handler = async (event: SQSEvent) => {
       StatusType.FAILED,
       `Error Code: DWLD-${error.code ?? 'ENOENT'}`,
     );
+    await logger([
+      {
+        requestId: logRequestId,
+        message: 'Error downloading video file',
+        error,
+        data: {
+          videoRequestId: requestId,
+        },
+      },
+    ]);
     return;
   }
 
@@ -174,6 +201,16 @@ export const handler = async (event: SQSEvent) => {
       StatusType.FAILED,
       `Error Code: FMPG-${error.code}`,
     );
+    await logger([
+      {
+        requestId: logRequestId,
+        message: 'Error processing video file',
+        error,
+        data: {
+          videoRequestId: requestId,
+        },
+      },
+    ]);
     return;
   }
 
@@ -191,17 +228,17 @@ export const handler = async (event: SQSEvent) => {
       StatusType.FAILED,
       `Error Code: UPLD-${error.code}`,
     );
+    await logger([
+      {
+        requestId: logRequestId,
+        message: 'Error uploading processed video file to bucket',
+        error,
+        data: {
+          videoRequestId: requestId,
+        },
+      },
+    ]);
     return;
-  }
-
-  // Delete original video from bucket to save space
-  try {
-    await deleteFromS3(
-      videoFileKey,
-    );
-    console.log('Deleted original video from bucket');
-  } catch (error: any) {
-    console.log('Error deleting original video from bucket:', { error });
   }
 
   // Update request status to COMPLETED
@@ -211,6 +248,36 @@ export const handler = async (event: SQSEvent) => {
     `${requestId}/output.${toExt}`,
   );
   console.log('Request status updated to COMPLETED');
+  await logger([
+    {
+      requestId: logRequestId,
+      message: 'Successfully processed video',
+      data: {
+        videoRequestId: requestId,
+      },
+      duration: differenceInMilliseconds(Date.now(), startTime),
+    },
+  ]);
+
+  // Delete original video from bucket to save space
+  try {
+    await deleteFromS3(
+      videoFileKey,
+    );
+    console.log('Deleted original video from bucket');
+  } catch (error: any) {
+    console.log('Error deleting original video from bucket:', { error });
+    await logger([
+      {
+        requestId: logRequestId,
+        message: 'Error deleting original video from bucket',
+        error,
+        data: {
+          videoRequestId: requestId,
+        },
+      },
+    ]);
+  }
 
   console.log('//----- Video Processing End -----//');
 };

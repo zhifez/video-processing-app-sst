@@ -16,6 +16,7 @@ export default $config({
   async run() {
     // Secrets
     const secretFfmpegLayerArn = new sst.Secret('FfmpegLayerArn');
+    const secretBaselimeApikey = new sst.Secret('BaselimeApiKey');
 
     // S3: Store video and json files
     const bucketUserVideo = new sst.aws.Bucket('UserVideoBucket', {
@@ -73,6 +74,7 @@ export default $config({
       handler: 'src/lambdas/video-request-queue.handler',
       link: [
         queueVideoRequest,
+        secretBaselimeApikey,
       ],
     }, {
       filterSuffix: '.json',
@@ -85,6 +87,7 @@ export default $config({
       link: [
         bucketUserVideo,
         dynamoVideoRequestTable,
+        secretBaselimeApikey,
       ],
       // FFMPEG might take some time to work depending on video size and complexity of command
       timeout: '5 minutes',
