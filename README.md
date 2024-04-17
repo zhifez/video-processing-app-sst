@@ -77,6 +77,8 @@ Baselime API is integrated to trace the following:
 - Queue sent
 - Video processing completed/failed (with duration)
 
+![Screenshot 2024-04-17 at 11 49 11 PM](https://github.com/zhifez/video-processing-app-sst/assets/33366655/e7afa051-3807-4986-bc93-fd675a6dc99f)
+
 ### Setup Steps
 1. Store your API Key using SST secret with:
 ```bash
