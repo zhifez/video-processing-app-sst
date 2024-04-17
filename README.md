@@ -38,7 +38,7 @@ To deploy, run:
 sst deploy
 ```
 
-## FFMPEG Notes
+## FFMPEG
 
 ### Binary Upload
 
@@ -69,4 +69,21 @@ queueVideoRequest.subscribe({
   timeout: '5 minutes', // '15 minutes' (max)
   ...
 });
+```
+
+## Baselime Integration
+
+Baselime API is integrated to trace the following:
+- Queue sent
+- Video processing completed/failed (with duration)
+
+### Setup Steps
+1. Store your API Key using SST secret with:
+```bash
+sst secret set BaselimeApiKey <your-api-key>
+```
+
+2. Deploy to see the changes with:
+```bash
+sst deploy
 ```
